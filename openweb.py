@@ -17,7 +17,6 @@ if (mode == 'tor'):
 elif (mode == 'firefox'):
     # this is wherever your geckodriver you downloaded is
     binary= '/usr/local/bin'
-    browser = webdriver.Firefox(binary)
 else:
     raise NotImplementedError
 
@@ -35,21 +34,15 @@ urls = [
     "https://www.asu.edu/",
     "https://www.utdallas.edu/"]
 
-urls = ["https://en.wikipedia.org/wiki/Cat"]
 fns = ["cat", "dog", "egr", "mit", "unm", "cmu", "bkl", "utx", "asu", "utd"]
-tmp = 'tmp.pcap'
+n = 10
 
-for i in range(0):
-  for url in urls: # or whatever
-    print("work {}".format(url))
+for i in range(n):
+  for url in urls:
+    print("------ work {} {}".format(i, url))
+    browser = webdriver.Firefox(binary)
     fn = "{}_{}_{}.pcap".format(mode, fns[urls.index(url)], i)
-    s,o = sub.getstatusoutput("rm -f {}".format(tmp))
-    #pro = sub.Popen(['tcpdump', '-i', 'any', '-w', fn],
-    pro = sub.Popen(['sudo', 'tcpdump', '-i', 'any', '-w', tmp],
-        stdout=sub.PIPE, stderr=sub.STDOUT)
+    sub.Popen(['sudo', 'tcpdump', '-i', 'any', '-w', fn])
     browser.get(url)
-    time.sleep(5)
-    # Need to stop dump to the pcap file
-    #pro.kill()
-    s,o = sub.getstatusoutput("cp {} {}".format(tmp, fn))
-    print("done {}".format(url))
+    browser.quit()
+    sub.Popen(['sudo', 'killall', 'tcpdump'])
