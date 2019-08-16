@@ -20,29 +20,26 @@ elif (mode == 'firefox'):
 else:
     raise NotImplementedError
 
-# tcpdump call goes here
-
-urls = [
-    "https://en.wikipedia.org/wiki/Cat",
-    "https://en.wikipedia.org/wiki/Dog",
-    "https://en.wikipedia.org/wiki/Egress_filtering",
-    "http://web.mit.edu/",
-    "http://www.unm.edu/",
-    "https://www.cmu.edu/",
-    "https://www.berkeley.edu/",
-    "https://www.utexas.edu/",
-    "https://www.asu.edu/",
-    "https://www.utdallas.edu/"]
-
-fns = ["cat", "dog", "egr", "mit", "unm", "cmu", "bkl", "utx", "asu", "utd"]
 n = 10
+sites = [
+    ('cat', "https://en.wikipedia.org/wiki/Cat"),
+    ('dog', "https://en.wikipedia.org/wiki/Dog"),
+    ('egr', "https://en.wikipedia.org/wiki/Egress_filtering"),
+    ('mit', "http://web.mit.edu/"),
+    ('unm', "http://www.unm.edu/"),
+    ('cmu', "https://www.cmu.edu/"),
+    ('bkl', "https://www.berkeley.edu/"),
+    ('utx', "https://www.utexas.edu/"),
+    ('asu', "https://www.asu.edu/"),
+    ('utd', "https://www.utdallas.edu/")]
 
 for i in range(n):
-  for url in urls:
-    print("------ work {} {}".format(i, url))
-    browser = webdriver.Firefox(binary)
-    fn = "{}_{}_{}.pcap".format(mode, fns[urls.index(url)], i)
-    sub.Popen(['sudo', 'tcpdump', '-i', 'any', '-w', fn])
-    browser.get(url)
-    browser.quit()
-    sub.Popen(['sudo', 'killall', 'tcpdump'])
+    for site in sites:
+        short, url = site
+        print("------ work {} {}".format(i, url))
+        browser = webdriver.Firefox(binary)
+        fn = "{}_{}_{}.pcap".format(mode, short, i)
+        sub.Popen(['sudo', 'tcpdump', '-i', 'any', '-w', fn])
+        browser.get(url)
+        browser.quit()
+        sub.Popen(['sudo', 'killall', 'tcpdump'])
