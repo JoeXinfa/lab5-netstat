@@ -5,6 +5,12 @@ sudo zmap -B 10M -p 80 -o result.csv -t 14400 -b blacklist.txt -r 300
 # use -r to set send rate in packets/sec, to avoid too fast and lose packets.
 # use -t to cap the length of time for sending packets. 14400 = 4 hours
 
+zmap --version
+zmap --list-output-fields
+sudo zmap -p 80 -o zmapscan0818.csv -t 14400 -b blacklist.txt -r 300 -f "saddr,daddr,ipid,ttl,sport,dport,seqnum,acknum,window,classification,success,repeat,cooldown,timestamp-str"
+
+# ---------------------------------------------------------------------------- #
+
 censys.io
 
 sudo tcpdump -i any -w ff_cat0.pcap
