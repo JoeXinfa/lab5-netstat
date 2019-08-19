@@ -1,6 +1,7 @@
 import pandas as pd
 from openweb import sites
 from collections import OrderedDict as odict
+import matplotlib.pyplot as plt
 
 MYIP = '10.0.2.15'
 
@@ -26,13 +27,22 @@ def main():
 
     modes = ['firefox', 'tor', 'vpn']
     n = 10
-    aps = [] # average packet size
+    apss = [] # average packet size
+    i = 0
     for mode in modes:
         for s in sites:
             site, url = s
             aps = average_packet_size(packets, mode, site, n)
-            print(mode, site, aps)
-
+            apss.append(aps)
+            print("{}\t{}\t{}\t{}".format(i, mode, site, aps))
+            i += 1
+    plt.plot(apss, 'ro')
+    plt.plot(apss, 'b-')
+    plt.xlabel('Connection ID')
+    plt.ylabel('Average Packet Size (bytes)')
+    plt.grid()
+#    plt.show()
+    plt.savefig('aps.png')
 
 def average_packet_size(packets, mode, site, n):
     """ Get average packet size of n times visit to (mode,site) """
