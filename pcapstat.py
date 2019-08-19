@@ -28,33 +28,70 @@ def main():
     modes = ['firefox', 'tor', 'vpn']
     n = 10
     apss = [] # average packet size
+    npsent = []
+    nprecv = []
     i = 0
     for mode in modes:
         for s in sites:
             site, url = s
             aps = average_packet_size(packets, mode, site, n)
+            nps = average_npacket_sent(packets, mode, site, n)
+            npr = average_npacket_recv(packets, mode, site, n)
             apss.append(aps)
-            print("{}\t{}\t{}\t{}".format(i, mode, site, aps))
+            npsent.append(nps)
+            nprecv.append(npr)
+            print("{}\t{}\t{}\t{}\t{}\t{}".format(i, mode, site, aps, nps, npr))
             i += 1
-    plt.plot(apss, 'ro')
-    plt.plot(apss, 'b-')
+
+    plot(apss, 'Average Packet Size (bytes)', 'aps.png', 3)
+    plot(npsent, 'Average Number of Packets Sent', 'npsent.png', 2)
+    plot(npsent, 'Average Number of Packets Received', 'nprecv.png', 1)
+
+
+def plot(dat, ylabel, fn, i):
+    plt.figure(i)
+    plt.plot(dat, 'ro')
+    plt.plot(dat, 'b-')
     plt.xlabel('Connection ID')
-    plt.ylabel('Average Packet Size (bytes)')
+    plt.ylabel(ylabel)
     plt.grid()
 #    plt.show()
-    plt.savefig('aps.png')
+    plt.savefig(fn)
+
+
+def average_npacket_recv(packets, mode, site, n):
+    """ Get average number of packets recv of n times visit to (mode,site) """
+    asum = 0
+    for i in range(n):
+        key = "{}_{}_{}".format(mode, site, i)
+        df = packets[key]
+        df = df.loc[df['dip'] == MYIP]
+        asum += df.shape[0]
+    return int(asum / n)
+
+
+def average_npacket_sent(packets, mode, site, n):
+    """ Get average number of packets sent of n times visit to (mode,site) """
+    asum = 0
+    for i in range(n):
+        key = "{}_{}_{}".format(mode, site, i)
+        df = packets[key]
+        df = df.loc[df['sip'] == MYIP]
+        asum += df.shape[0]
+    return int(asum / n)
+
 
 def average_packet_size(packets, mode, site, n):
     """ Get average packet size of n times visit to (mode,site) """
-    avgsum = 0
+    asum = 0
     for i in range(n):
         key = "{}_{}_{}".format(mode, site, i)
         df = packets[key]
         dfs = df.loc[df['sip'] == MYIP]
         dfd = df.loc[df['dip'] == MYIP]
         df_clean = pd.concat([dfs, dfd], ignore_index=True)
-        avgsum += df_clean.len.mean()
-    return avgsum / n
+        asum += df_clean.len.mean()
+    return int(asum / n)
 
 
 def read_pcap_csv(fn):
