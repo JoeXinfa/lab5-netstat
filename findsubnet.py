@@ -12,13 +12,16 @@ def get_subnet_from_whois(ip):
       CIDR:           23.32.0.0/11, 23.64.0.0/14
     """
     subs = {'CIDR': None, 'NetRange': None, 'inetnum': None}
-    s,o = subprocess.getstatusoutput("whois {}".format(ip))
+    try:
+        s,o = subprocess.getstatusoutput("whois {}".format(ip))
+    except UnicodeDecodeError:
+        return None
     out = o.split('\n')
     for line in out:
         if len(line) == 0 or line[0] in ('#', '%'):
             continue
         if any(key in line for key in KEYS):
-            k, v = line.split(':')
+            k, v = line.split(':')[:2]
             if k not in KEYS: # netname: GCTR-CIDR-BLK-JP
                 continue
             v = v.strip()
@@ -26,7 +29,7 @@ def get_subnet_from_whois(ip):
             if subs[k] is None: # only take the first appearance
                 subs[k] = v
     if all(subs[key] is None for key in KEYS):
-       subs = None
+       return None
        #raise ValueError("No subnet found from whois")
     return subs
 
@@ -87,8 +90,8 @@ def complete_subnet(subs):
 
 
 def main():
-    fn = "zmapscan.txt"
-    #fn = "test.txt"
+    #fn = "zmapscan.txt"
+    fn = "test.txt"
     ips = []
     with open(fn, 'r') as f:
         for ip in f:
