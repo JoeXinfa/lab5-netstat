@@ -131,42 +131,6 @@ def main():
         else:
             subnets[cidr].append(ip)
 
-    """
-    # Single thread
-    i = 1
-    for ip in ips:
-        print('working on {}/{}\t{}'.format(i, nip, ip))
-        i += 1
-        need_whois = True
-        # This becomes slower when subnets gets bigger
-        for cidr in subnets:
-            ipa = ipaddress.ip_address(ip)
-            ipn = ipaddress.ip_network(cidr)
-            if ipa in ipn:
-                need_whois = False
-                subnets[cidr].append(ip)
-                break
-        if need_whois:
-            subs = get_subnet_from_whois(ip)
-            if subs is None:
-                badips.append(ip)
-                continue
-            if subs['CIDR'] is not None:
-                if ',' in subs['CIDR']:
-                    badips.append(ip)
-                    continue
-            subs = complete_subnet(subs)
-            if subs is None:
-                badips.append(ip)
-                continue
-            key = subs['CIDR']
-            if key in subnets:
-                #raise ValueError("Subnet already exists")
-                subnets[key].append(ip)
-            else:
-                subnets[key] = [ip]
-    """
-
     nipfit = 0
     for key,val in subnets.items():
         nipfit += len(val)
