@@ -1,9 +1,10 @@
 import subprocess
 import netaddr
-import ipaddress
+#import ipaddress
 import os
 from joblib import Parallel, delayed
 import sys
+import pickle
 
 KEYS = ('NetRange', 'CIDR', 'inetnum')
 
@@ -93,7 +94,8 @@ def complete_subnet(subs):
 
 
 def find_subnet(i, ip):
-    print('working on {} {}'.format(i, ip))
+    if i % 10 == 0:
+        print('working on {} {}'.format(i, ip))
     subs = get_subnet_from_whois(ip)
     if subs is None:
         return (ip, None)
@@ -113,7 +115,8 @@ def main():
             ip = ip.strip('\n')
             ips.append(ip)
 
-    nthread = os.cpu_count()
+    #nthread = os.cpu_count()
+    nthread = 100 # this can be bigger than cores, why?
     nip = len(ips)
     lista = Parallel(n_jobs=nthread)(delayed(find_subnet)(i, ips[i])
         for i in range(nip))
@@ -134,12 +137,19 @@ def main():
     nipfit = 0
     for key,val in subnets.items():
         nipfit += len(val)
-        print(key, val)
 
     print('Number of networks =', len(subnets))
     print('Number of IPs in output =', nipfit)
     print('Number of IPs in input =', nip)
     print('Number of bad IPs =', len(badips))
+
+    outfn = 'subnets.pkl'
+    pickle.dump(subnets, open(outfn, 'wb'))
+    #test = pickle.load(open(outfn, 'rb'))
+    #print(test)
+
+    outfn = 'badips.pkl'
+    pickle.dump(badips, open(outfn, 'wb'))
 
 
 if __name__ == '__main__':
