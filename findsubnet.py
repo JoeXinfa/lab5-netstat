@@ -1,6 +1,9 @@
 import subprocess
 import netaddr
 import ipaddress
+import os
+from joblib import Parallel, delayed
+import sys
 
 KEYS = ('NetRange', 'CIDR', 'inetnum')
 
@@ -89,24 +92,53 @@ def complete_subnet(subs):
     return subs
 
 
+def find_subnet(i, ip):
+    print('working on {} {}'.format(i, ip))
+    subs = get_subnet_from_whois(ip)
+    if subs is None:
+        return (ip, None)
+    if subs['CIDR'] is not None:
+        if ',' in subs['CIDR']:
+            return (ip, None)
+    subs = complete_subnet(subs)
+    return (ip, subs)
+
+
 def main():
+    fn = sys.argv[1]
     #fn = "zmapscan.txt"
-    fn = "test.txt"
     ips = []
     with open(fn, 'r') as f:
         for ip in f:
             ip = ip.strip('\n')
             ips.append(ip)
 
+    nthread = os.cpu_count()
     nip = len(ips)
+    lista = Parallel(n_jobs=nthread)(delayed(find_subnet)(i, ips[i])
+        for i in range(nip))
+
     badips = []
     subnets = {}
+    for ipnet in lista:
+        ip, net = ipnet
+        if net is None:
+            badips.append(ip)
+            continue
+        cidr = net['CIDR']
+        if cidr not in subnets:
+            subnets[cidr] = [ip]
+        else:
+            subnets[cidr].append(ip)
+
+    """
+    # Single thread
     i = 1
     for ip in ips:
         print('working on {}/{}\t{}'.format(i, nip, ip))
         i += 1
         need_whois = True
-        """
+        # This becomes slower when subnets gets bigger
         for cidr in subnets:
             ipa = ipaddress.ip_address(ip)
             ipn = ipaddress.ip_network(cidr)
@@ -114,7 +146,6 @@ def main():
                 need_whois = False
                 subnets[cidr].append(ip)
                 break
-        """
         if need_whois:
             subs = get_subnet_from_whois(ip)
             if subs is None:
@@ -134,6 +165,7 @@ def main():
                 subnets[key].append(ip)
             else:
                 subnets[key] = [ip]
+    """
 
     nipfit = 0
     for key,val in subnets.items():
