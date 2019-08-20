@@ -10,6 +10,10 @@ zmap --list-output-fields
 sudo zmap -p 80 -o zmapscan0818.csv -t 14400 -b blacklist.txt -r 300 -f "saddr,daddr,ipid,ttl,sport,dport,seqnum,acknum,window,classification,success,repeat,cooldown,timestamp-str"
 
 # ---------------------------------------------------------------------------- #
+
+https://www.moviri.com/2014/01/active-passive-monitoring/
+
+# ---------------------------------------------------------------------------- #
 Network		NIP	Example IP	Owner
 104.16.0.0/12	154	104.17.80.50	Cloudflare, Inc.
 
@@ -22,6 +26,9 @@ sudo zmap 104.16.0.0/12 -p 443 -o cloudflare_p443.csv -b blacklist.txt -t 60 -r 
 # port 25, SMTP
 # port 80, HTTP
 # port 443, HTTPS
+
+https://shapeshed.com/unix-traceroute/
+https://github.com/zmap/zmap/wiki/Scanning-Best-Practices
 
 # ---------------------------------------------------------------------------- #
 
