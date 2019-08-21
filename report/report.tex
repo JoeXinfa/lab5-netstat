@@ -1,0 +1,355 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{grffile}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\usepackage{minted}
+\usepackage{verbatim}
+\author{Student: Joseph Zhu XZ6987 \\ Professor: Mohit Tiwari \\ TA: Antonio Miguel Espinoza \\ Department of Electrical \& Computer Engineering \\ The University of Texas at Austin}
+\date{\today}
+\title{EEw382N Security Laboratory Exercise 5 Report}
+\hypersetup{
+ pdfauthor={Student: Your Name and EID Here \\ Professor: Mohit Tiwari \\ TA: Austin Harris \\ Department of Electrical \& Computer Engineering \\ The University of Texas at Austin},
+ pdftitle={EEw382N Security Laboratory Exercise X Report},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={},
+ pdflang={English}}
+\begin{document}
+
+\maketitle
+
+\section{Part 1}
+\label{sec:part-1}
+
+On August 17th, I scanned using zmap on port 80 at send rate 300 packets/second
+for 4 hours, and got 16204 IPs.
+I did not save the command line print that has hit rate etc.
+On August 18th, I scanned again with more fields (saddr, daddr, sport, dport,
+success, etc). In command line print, it shows at the end:
+the number of machines probed is 3176712 (send),
+the number of machines responding is 11410 (recv),
+and the hit rate is 0.36\%.
+
+I wrote this code to group the IPs to networks, file \textit{findnet.py}.
+Using the whois tool, one challenge is some IPs have NetRange, some have CIDR,
+and some only have inetnum. Some inetnum are in range format, others in prefix.
+I use one function to collect whatever whois returns for the three keys,
+and another function to unify to CIDR and NetRange.
+I use the netaddr library for the conversion.
+
+The next task is to grouping. I tried the suggested method in piazza:
+"not run for every IP... search through your list and group many IPs with one call..."
+This may need dynamically shrink the list, taking out in-network IPs.
+My implementation was looping through the IPs list (static), and searching
+through networks (dynamic). I found this becomes slower when the dictionary
+of the networks grows bigger.
+I saved the code to my github repository and moved on to whois every IP.
+Single thread would take over 15 hours for the 16204 IPs.
+I used multi thread, which took 10 minutes (with 100 threads).
+It is a happy surprise that I find the number of threads is not limited
+to the number of cores I have in host or VM (code \textit{findnet.py}).
+I saved the results to pickle for statistical analysis next.
+
+This code \textit{netstat.py} ranks the networks by the number of IPs included.
+It also gets the owner by whois the first IP and parsing \textit{OrgName},
+\textit{organisation}, or \textit{descr}.
+Most US IPs have well-formatted whois, while some foreign IPs do not.
+I learned this when looking for network above, and again here.
+The code needs to consider many cases to work with more IPs.
+This may not be a surprise considering the vast amount of IPs covering
+the whole earth (various nations, languages, and registeration time).
+
+Table \ref{tbl:net20} lists the top 20 networks by the number of IPs (NIP),
+along with an example IP and the owner.
+As expected, the top organizations are Akamai, Cloudfare, Amazon, Aliyun,
+and Google.
+
+\begin{table}[]
+\centering
+\caption{\label{tbl:net20}
+Top 20 networks with most IPs}
+\begin{tabular}{|l|l|l|l|}
+\hline
+Network        & NIP & Example IP     & Owner                     \\ \hline
+104.64.0.0/10  & 684 & 104.78.92.154  & Akamai Technologies, Inc. \\ \hline
+23.192.0.0/11  & 406 & 23.212.206.132 & Akamai Technologies, Inc. \\ \hline
+23.0.0.0/12    & 193 & 23.2.134.147   & Akamai Technologies, Inc. \\ \hline
+104.16.0.0/12  & 154 & 104.17.80.50   & Cloudflare, Inc.          \\ \hline
+23.72.0.0/13   & 122 & 23.75.11.119   & Akamai Technologies, Inc. \\ \hline
+184.24.0.0/13  & 113 & 184.26.248.69  & Akamai Technologies, Inc. \\ \hline
+52.0.0.0/11    & 101 & 52.6.25.191    & Amazon Technologies Inc.  \\ \hline
+34.192.0.0/10  & 97  & 34.213.203.238 & Amazon Technologies Inc.  \\ \hline
+39.96.0.0/13   & 66  & 39.105.130.108 & Aliyun Computing Co., LTD \\ \hline
+18.128.0.0/9   & 60  & 18.136.65.48   & Amazon Technologies Inc.  \\ \hline
+184.84.0.0/14  & 48  & 184.84.110.45  & Akamai Technologies, Inc. \\ \hline
+13.224.0.0/14  & 47  & 13.227.47.22   & Amazon Technologies Inc.  \\ \hline
+35.192.0.0/12  & 47  & 35.194.67.14   & Google LLC                \\ \hline
+52.32.0.0/11   & 43  & 52.40.136.250  & Amazon Technologies Inc.  \\ \hline
+112.124.0.0/14 & 41  & 112.127.114.74 & Aliyun Computing Co., LTD \\ \hline
+3.128.0.0/9    & 41  & 3.215.10.76    & Amazon Technologies Inc.  \\ \hline
+223.4.0.0/14   & 40  & 223.6.171.180  & Aliyun Computing Co., LTD \\ \hline
+196.16.0.0/14  & 36  & 196.16.175.66  & ORG-IA41-AFRINIC          \\ \hline
+13.32.0.0/12   & 34  & 13.33.177.55   & Amazon Technologies Inc.  \\ \hline
+107.172.0.0/14 & 33  & 107.174.150.96 & ColoCrossing              \\ \hline
+\end{tabular}
+\end{table}
+
+
+I select the Cloudflare network for some more digging,
+using the command line tools we learned in the lecture
+(nslookup, dig, traceroute, whois, nmap, zmap).
+
+The nslookup result is in Appendix \ref{app:nslookup}.
+The server is the DNS server my computer is querying.
+The address is the DNS server and the port.
+Port 53 is the reserved port for DNS.
+In the answer, the first address is IPv4 and the second is IPv6.
+Tool \textit{dig} returns similar information.
+
+The traceroute result is in Appendix \ref{app:traceroute}
+It went through 13 nodes between me and the server.
+I ran "nmap -A" some nodes (-A to enable OS and version detection...),
+but it hung, probably as the lab instruction says "it may be seen as an attack."
+I ran whois on all the nodes and appended the owner behind the IPs.
+Running "whois IP | grep CIDR", I find besides the un-ack 5 and 11,
+Hosts 2-3 belong to the same network 172.16.0.0/12.
+Hosts 7-9 belong to the same network 12.122.0.0/15.
+Hosts 10-12 belong to the same network 4.0.0.0/9.
+So it went through 7+ networks to reach the Cloudflare server.
+I did an IP to geolocation search online, and found the server of both IPs
+(198.41.215.162 and 104.17.80.50) are located in San Francisco, California.
+The Cloudflare Network Map (https://www.cloudflare.com/network/)
+does seem have San Francisco (even though not listed in data center).
+
+This Cloudflare network (104.16.0.0/12) has max 2**(32-12) = 1,048,576 IPs.
+I scan this network with zmap on some common ports, 60 seconds each,
+and the result is shown in Table \ref{tbl:scanports}.
+There are lots of machines listening on port 80/HTTP and 443/HTTPS,
+but none on 20/FTP, 22/SSH, 25/SMTP.
+
+\begin{table}[]
+\centering
+\caption{\label{tbl:scanports}
+Cloudflare zmap scan on common ports}
+\begin{tabular}{|l|l|l|l|l|l|}
+\hline
+Port & Protocol & send  & recv  & hitrate & IPs   \\ \hline
+20   & FTP      & 12108 & 0     & 0.00\%  & 0     \\ \hline
+22   & SSH      & 12509 & 0     & 0.00\%  & 0     \\ \hline
+25   & SMTP     & 12484 & 0     & 0.00\%  & 0     \\ \hline
+443  & HTTPS    & 17610 & 10942 & 62.14\% & 10942 \\ \hline
+80   & HTTP     & 17783 & 11121 & 62.54\% & 11121 \\ \hline
+\end{tabular}
+\end{table}
+
+
+\section{Part 2}
+\label{sec:part-2}
+
+At first I spent 2-3 hours do the 10x10 visits manually on Firefox,
+then about 6 hours scripting selenium for automation (3 for Firefox, 3 for TOR).
+The time investment is worthwhile because it is repeatable.
+Michael Kuy and I sat together for these hours, we shared tricks/skills productively
+but coded independently. My code is here \textit{openweb.py}.
+Learned lessons from the manual visits, we script it the safe way.
+We set the browser to clear cache after window close.
+We open the browser before launching tcpdump.
+We close the browser after the page loaded, then finally kill tcpdump.
+I loop through the 10 sites 10 times (inner loop for sites further reduces
+the risk of cache and cookies).
+Running the code, I got 3x10x10=300 pcap files.
+I found there is a library \textit{tbselenium} for TOR, tried it,
+but still have bug, file \textit{openweb\_tor.py} as documentation.
+
+Bash script \textit{pcap2csv.bash} prints packet information to csv files.
+Python script \textit{pcapstat.py} loads, calculates statistics and plots.
+Table \ref{tbl:webstat} shows the statistics of the connections.
+Column "Size" is the average packet size of the 10 visits.
+Column "Sent" is the average number of packets sent by my IP.
+Column "Recv" is the average number of packets received by my IP.
+
+\begin{table}[]
+\centering
+\caption{\label{tbl:webstat}
+Statistics of the connections}
+\begin{tabular}{|l|l|l|l|l|l|}
+\hline
+ID & Mode    & Site & Size & Sent & Recv \\ \hline
+0  & firefox & cat  & 2760 & 287  & 291  \\ \hline
+1  & firefox & dog  & 2936 & 286  & 293  \\ \hline
+2  & firefox & egr  & 1548 & 100  & 98   \\ \hline
+3  & firefox & mit  & 1957 & 232  & 228  \\ \hline
+4  & firefox & unm  & 3207 & 1776 & 1752 \\ \hline
+5  & firefox & cmu  & 3175 & 690  & 697  \\ \hline
+6  & firefox & bkl  & 2593 & 639  & 638  \\ \hline
+7  & firefox & utx  & 2194 & 455  & 459  \\ \hline
+8  & firefox & asu  & 2428 & 1254 & 1278 \\ \hline
+9  & firefox & utd  & 7086 & 533  & 562  \\ \hline
+10 & tor     & cat  & 3135 & 177  & 212  \\ \hline
+11 & tor     & dog  & 3496 & 169  & 208  \\ \hline
+12 & tor     & egr  & 2199 & 79   & 88   \\ \hline
+13 & tor     & mit  & 2839 & 126  & 149  \\ \hline
+14 & tor     & unm  & 4995 & 1042 & 1318 \\ \hline
+15 & tor     & cmu  & 4051 & 467  & 575  \\ \hline
+16 & tor     & bkl  & 3518 & 413  & 495  \\ \hline
+17 & tor     & utx  & 2667 & 345  & 412  \\ \hline
+18 & tor     & asu  & 3217 & 885  & 1046 \\ \hline
+19 & tor     & utd  & 4502 & 769  & 880  \\ \hline
+20 & vpn     & cat  & 2163 & 390  & 406  \\ \hline
+21 & vpn     & dog  & 2332 & 376  & 390  \\ \hline
+22 & vpn     & egr  & 1299 & 177  & 182  \\ \hline
+23 & vpn     & mit  & 1652 & 322  & 322  \\ \hline
+24 & vpn     & unm  & 2670 & 2164 & 2141 \\ \hline
+25 & vpn     & cmu  & 2610 & 858  & 880  \\ \hline
+26 & vpn     & bkl  & 2238 & 760  & 756  \\ \hline
+27 & vpn     & utx  & 1843 & 562  & 568  \\ \hline
+28 & vpn     & asu  & 2089 & 1507 & 1517 \\ \hline
+29 & vpn     & utd  & 6080 & 647  & 670  \\ \hline
+\end{tabular}
+\end{table}
+
+
+Figure \ref{fig:aps} shows the average packet size for the 30 mode-sites.
+Figure \ref{fig:npsent} shows the average number of packets sent.
+Figure \ref{fig:nprecv} shows the average number of packets received.
+The numbers of packets sent and received are close,
+indicating most packets are ack-ed and few dropped.
+We see similarities across the modes.
+Looking at average packet size, egr, mit, utx are always small,
+cat, asu, dog, bkl are always mid size, and
+cmu, unm, utd are always at the high end.
+Looking at the average number of packets sent or received,
+egr, mit, dog, cat are always low,
+utx, utd, bkl, cmu are in the middle, and
+asu, unm are always high.
+By these consistency between modes and distinction between sites,
+we can determine which of the 10 websites was visited with good confidence.
+
+Passive (aka sniffing) monitoring captures traffic from a network
+by copying traffic, such as the tcpdump and wireshark we did above.
+It knows which connection type we are using (regular browser, TOR, or VPN)
+and if we are using (the traffic).
+The benefit of TOR and VPN is encryption for higher security and privacy.
+TOR encrypts the application layer including the next node destination IP address.
+VPN encrypts and sends through firewall and/or web filter to VPN server.
+
+Figure \ref{fig:ffcat0} shows the first 50
+packets from tcpdump on Firefox accessing the cat site.
+Figure \ref{fig:torcat0} shows the first 50
+packets from tcpdump on TOR accessing the cat site.
+Figure \ref{fig:vpncat0} shows the first 50
+packets from tcpdump on VPN accessing the cat site.
+Comparing them, I see that for regular browser, almost everything is visible to
+a passive device on the network such as source/destination IPs,
+source/destination ports, DNS/TCP/TLS protocols, packet size, timing, etc.
+For TOR browser, DNS is hidden, TCP source/destination IPs and ports
+are encrypted, TLS source IP is me but destination IP is random.
+For VPN, it routes through UT network (128.83.185.41 and 129.116.67.2).
+It sees DNS, but the DNS source IP is not me.
+The TCP source/destination IPs and ports are visible.
+The DTLS has source IP of me and destination IP of UT.
+
+
+My Github repository is here. It documents my learning and testing. \\
+\textit{https://github.com/JoeXinfa/lab5-netstat.git}
+
+\section{Conclusion}
+\label{sec:conclusion}
+I spent 36+ hours on this lab. I like it as a combination of
+network, CLI, and python.
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.9\linewidth]{../aps.png}
+\caption{\label{fig:aps}
+Average packet size.
+Red is for regular browser, green for TOR, and blue for VPN.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.9\linewidth]{../npsent.png}
+\caption{\label{fig:npsent}
+Average number of packets sent.
+Red is for regular browser, green for TOR, and blue for VPN.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.9\linewidth]{../nprecv.png}
+\caption{\label{fig:nprecv}
+Average number of packets received.
+Red is for regular browser, green for TOR, and blue for VPN.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=1.2\linewidth]{../mon/firefox_cat_0.png}
+\caption{\label{fig:ffcat0}
+Packets from tcpdump on Firefox accessing the cat site}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=1.2\linewidth]{../mon/tor_cat_0.png}
+\caption{\label{fig:torcat0}
+Packets from tcpdump on TOR accessing the cat site}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=1.2\linewidth]{../mon/vpn_cat_0.png}
+\caption{\label{fig:vpncat0}
+Packets from tcpdump on VPN accessing the cat site}
+\end{figure}
+
+\appendix
+\section{Appendices}
+\subsection{Cloudflare nslookup}
+\label{app:nslookup}
+
+\begin{Verbatim}[obeytabs, tabsize=4]
+$ nslookup cloudflare.com
+Server:		127.0.0.53
+Address:	127.0.0.53#53
+Non-authoritative answer:
+Name:	cloudflare.com
+Address: 198.41.215.162
+Name:	cloudflare.com
+Address: 2606:4700::c629:d7a2
+\end{Verbatim}
+
+\subsection{Cloudflare traceroute}
+\label{app:traceroute}
+
+\begin{Verbatim}[obeytabs, tabsize=4]
+$ sudo traceroute -I cloudflare.com
+traceroute to cloudflare.com (198.41.215.162), 30 hops max, 60 byte packets
+ 1  10.0.2.2            Internet Assigned Numbers Authority
+ 2  172.20.10.1         Internet Assigned Numbers Authority
+ 3  172.26.96.161       Internet Assigned Numbers Authority
+ 4  107.72.204.92       AT&T Mobility LLC
+ 5  * * *
+ 6  12.83.186.85        AT&T Services, Inc.
+ 7  12.122.5.190        AT&T Services, Inc.
+ 8  12.122.2.197        AT&T Services, Inc.
+ 9  12.123.18.229       AT&T Services, Inc.
+10  4.68.39.1           Level 3 Parent, LLC
+11  * * *
+12  4.16.234.182        Level 3 Communications, Inc.
+13  198.41.215.162      Cloudflare, Inc.
+\end{Verbatim}
+
+
+\end{document}
