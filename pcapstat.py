@@ -2,6 +2,7 @@ import pandas as pd
 from openweb import sites
 from collections import OrderedDict as odict
 import matplotlib.pyplot as plt
+import numpy as np
 
 MYIP = '10.0.2.15'
 
@@ -43,12 +44,28 @@ def main():
             print("{}\t{}\t{}\t{}\t{}\t{}".format(i, mode, site, aps, nps, npr))
             i += 1
 
-    plot(apss, 'Average Packet Size (bytes)', 'aps.png', 3)
-    plot(npsent, 'Average Number of Packets Sent', 'npsent.png', 2)
-    plot(npsent, 'Average Number of Packets Received', 'nprecv.png', 1)
+    plot_bar(apss, 'Average Packet Size (bytes)', 'aps.png', 3)
+    plot_bar(npsent, 'Average Number of Packets Sent', 'npsent.png', 2)
+    plot_bar(npsent, 'Average Number of Packets Received', 'nprecv.png', 1)
 
 
-def plot(dat, ylabel, fn, i):
+def plot_bar(dat, label, fn, i):
+    obj = ('cat', 'dog', 'egr', 'mit', 'unm', 'cmu', 'bkl', 'utx', 'asu', 'utd',
+           'cat', 'dog', 'egr', 'mit', 'unm', 'cmu', 'bkl', 'utx', 'asu', 'utd',
+           'cat', 'dog', 'egr', 'mit', 'unm', 'cmu', 'bkl', 'utx', 'asu', 'utd')
+    color = ('red', 'red', 'red', 'red', 'red', 'red', 'red', 'red', 'red', 'red',
+             'green', 'green', 'green', 'green', 'green', 'green', 'green', 'green', 'green', 'green',
+             'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue')
+    ypos = np.arange(len(obj))
+    plt.figure(i, figsize=(6.4, 7.2))
+    plt.barh(ypos, dat, color=color)
+    plt.yticks(ypos, obj)
+    plt.xlabel(label)
+#    plt.show()
+    plt.savefig(fn)
+    
+    
+def plot_line(dat, ylabel, fn, i):
     plt.figure(i)
     plt.plot(dat, 'ro')
     plt.plot(dat, 'b-')
